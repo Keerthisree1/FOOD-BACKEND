@@ -28,7 +28,7 @@ const foodSchema = new mongoose.Schema(
 
     price:{
       type:Number,
-      default:[]
+      default:100
     }
   
   },
