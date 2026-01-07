@@ -2,10 +2,12 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
-const authRoutes = require('./routes/authRoutes');
 
-dotenv.config();          // Load env variables
-connectDB();              // Connect database
+// Load env variables
+dotenv.config();
+
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 
@@ -13,11 +15,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Routes
+const authRoutes = require('./routes/authRoutes');
+const foodRoutes = require('./routes/foodRoutes');   
+
+app.use('/api/auth', authRoutes);
+app.use('/api/foods', foodRoutes);                   
+
 // Test route
 app.get('/', (req, res) => {
   res.send('Food App Backend Running');
 });
-app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 5000;
 
