@@ -17,10 +17,13 @@ app.use(express.json());
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
-const foodRoutes = require('./routes/foodRoutes');   
+const foodRoutes = require('./routes/foodRoutes');
+const cartRoutes = require('./routes/cartRoutes');  
+ 
 
 app.use('/api/auth', authRoutes);
-app.use('/api/foods', foodRoutes);                   
+app.use('/api/foods', foodRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Test route
 app.get('/', (req, res) => {
