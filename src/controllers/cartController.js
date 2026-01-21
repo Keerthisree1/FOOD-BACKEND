@@ -165,14 +165,14 @@ exports.removeCartItem = async (req, res) => {
     const userId = req.user._id;          
     const { foodId } = req.query;        
 
-    // 1️⃣ Validate param
+    //Validate param
     if (!foodId) {
       return res.status(400).json({
         message: 'foodId is required'
       });
     }
 
-    // 2️⃣ Find user's cart
+    //Find user's cart
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {
@@ -181,7 +181,7 @@ exports.removeCartItem = async (req, res) => {
       });
     }
 
-    // 3️⃣ Check item exists
+    //Check item exists
     const itemIndex = cart.items.findIndex(
       item => item.foodId === foodId
     );
@@ -192,19 +192,19 @@ exports.removeCartItem = async (req, res) => {
       });
     }
 
-    // 4️⃣ Remove item
+    //Remove item
     cart.items.splice(itemIndex, 1);
 
-    // 5️⃣ Recalculate total
+    //Recalculate total
     cart.totalAmount = cart.items.reduce(
       (total, item) => total + item.price * item.quantity,
       0
     );
 
-    // 6️⃣ Save cart
+    //Save cart
     await cart.save();
 
-    // 7️⃣ Response
+    //Response
     res.status(200).json({
       success: true,
       message: 'Item removed from cart',
@@ -222,7 +222,7 @@ exports.clearCart = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // 1️⃣ Find user's cart
+    //Find user's cart
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {
@@ -231,14 +231,14 @@ exports.clearCart = async (req, res) => {
       });
     }
 
-    // 2️⃣ Clear cart
+    //Clear cart
     cart.items = [];
     cart.totalAmount = 0;
 
-    // 3️⃣ Save
+    //Save
     await cart.save();
 
-    // 4️⃣ Response
+    //Response
     res.status(200).json({
       success: true,
       message: 'Cart cleared successfully',
