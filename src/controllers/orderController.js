@@ -1,43 +1,49 @@
 const Order = require('../models/orderModel');
 const Cart = require('../models/cartModel');
-
+//placeOrder
 exports.placeOrder = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const { deliveryAddress } = req.body;
+    const tokenUserId = req.user._id.toString(); 
+    const { userId, deliveryAddress } = req.body;
 
-    //Validate input
-    if (!deliveryAddress) {
+    // 1. Validate inputs
+    if (!userId || !deliveryAddress) {
       return res.status(400).json({
-        message: 'Delivery address is required'
+        message: 'userId and deliveryAddress are required'
       });
     }
 
-    //Fetch user cart
+    // 2. Security check 
+    if (userId !== tokenUserId) {
+      return res.status(403).json({
+        message: 'You are not allowed to place order for another user'
+      });
+    }
+
+    // 3. Get cart
     const cart = await Cart.findOne({ userId });
 
-    //Create order
-    const order = new Order({
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({
+        message: 'Cart is empty'
+      });
+    }
+
+    // 4. Create order
+    const order = await Order.create({
       userId,
-      items: cart.items.map(item => ({
-        foodId: item.foodId,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price
-      })),
+      items: cart.items,
       totalAmount: cart.totalAmount,
-      deliveryAddress
+      deliveryAddress,
+      orderStatus: 'Pending',
+      paymentStatus: 'Pending'
     });
 
-    //Save order
-    await order.save();
-
-    //Clear cart after order
+    // 5. Clear cart
     cart.items = [];
     cart.totalAmount = 0;
     await cart.save();
 
-    //Response
     res.status(201).json({
       success: true,
       message: 'Order placed successfully',
