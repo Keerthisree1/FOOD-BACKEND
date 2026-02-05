@@ -12,6 +12,11 @@ connectDB();
 const app = express();
 const allowedOrigins = ['http://localhost:5173'];
 
+app.use(
+  '/api/payments/cashfree-webhook',
+  express.raw({ type: '*/*' })
+);
+
 // Middlewares
 app.use(
   cors({
@@ -26,6 +31,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/foods', require('./routes/foodRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 // Test route
 app.get('/', (req, res) => {
