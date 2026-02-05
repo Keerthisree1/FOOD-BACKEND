@@ -250,6 +250,52 @@ exports.clearCart = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+//updateCartQuantity
+exports.updateCartQuantity = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { foodId, type } = req.body;
 
+    const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
 
+    const item = cart.items.find(
+      i => i.foodId.toString() === foodId
+    );
 
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    if (type === "increase") {
+      item.quantity += 1;
+    }
+
+    if (type === "decrease") {
+      item.quantity -= 1;
+
+      //
+      if (item.quantity <= 0) {
+        cart.items = cart.items.filter(
+          i => i.foodId.toString() !== foodId
+        );
+      }
+    }
+
+    cart.totalAmount = cart.items.reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0
+    );
+
+    await cart.save();
+
+    res.status(200).json({
+      success: true,
+      cart
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
