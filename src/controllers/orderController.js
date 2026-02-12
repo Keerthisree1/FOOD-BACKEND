@@ -19,8 +19,7 @@ exports.placeOrder = async (req, res) => {
         message: 'You are not allowed to place order for another user'
       });
     }
-
-    // 3. Get cart
+     // 3. Get cart
     const cart = await Cart.findOne({ userId });
 
     if (!cart || cart.items.length === 0) {
@@ -47,7 +46,15 @@ exports.placeOrder = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Order placed successfully',
-      order
+      order: {
+    orderId: newOrder._id,
+    userId: newOrder.userId,
+    items: newOrder.items,
+    totalAmount: newOrder.totalAmount,
+    deliveryAddress: newOrder.deliveryAddress,
+    orderStatus: newOrder.orderStatus,
+    createdAt: newOrder.createdAt
+  }
     });
 
   } catch (error) {
@@ -62,6 +69,16 @@ exports.getUserOrders = async (req, res) => {
 
     const orders = await Order.find({ userId })
       .sort({ createdAt: -1 });
+
+      const formattedOrders = orders.map(order => ({
+  orderId: order._id,
+  userId: order.userId,
+  items: order.items,
+  totalAmount: order.totalAmount,
+  deliveryAddress: order.deliveryAddress,
+  orderStatus: order.orderStatus,
+  createdAt: order.createdAt
+}));
       
     res.status(200).json({
       success: true,
