@@ -24,19 +24,27 @@ exports.placeOrder = async (req, res) => {
 
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
-        message: 'Cart is empty'
+      success: true,
+      message: "Order already placed or cart empty"
       });
     }
 
     // 4. Create order
     const order = await Order.create({
-      userId,
-      items: cart.items,
-      totalAmount: cart.totalAmount,
-      deliveryAddress,
-      orderStatus: 'Pending',
-      paymentStatus: 'Pending'
-    });
+    userId,
+    items: cart.items.map(item => ({
+    foodId: item.foodId,
+    name: item.name,
+    quantity: item.quantity,
+    price: item.price,
+    image: item.image  
+  })),
+    totalAmount: cart.totalAmount,
+    deliveryAddress,
+    orderStatus: 'Pending',
+    paymentStatus: 'Pending'
+  });
+
 
     // 5. Clear cart
     cart.items = [];
@@ -46,15 +54,7 @@ exports.placeOrder = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Order placed successfully',
-      order: {
-    orderId: newOrder._id,
-    userId: newOrder.userId,
-    items: newOrder.items,
-    totalAmount: newOrder.totalAmount,
-    deliveryAddress: newOrder.deliveryAddress,
-    orderStatus: newOrder.orderStatus,
-    createdAt: newOrder.createdAt
-  }
+      order
     });
 
   } catch (error) {
@@ -69,16 +69,6 @@ exports.getUserOrders = async (req, res) => {
 
     const orders = await Order.find({ userId })
       .sort({ createdAt: -1 });
-
-      const formattedOrders = orders.map(order => ({
-  orderId: order._id,
-  userId: order.userId,
-  items: order.items,
-  totalAmount: order.totalAmount,
-  deliveryAddress: order.deliveryAddress,
-  orderStatus: order.orderStatus,
-  createdAt: order.createdAt
-}));
       
     res.status(200).json({
       success: true,

@@ -16,7 +16,10 @@ const orderItemSchema = new mongoose.Schema({
   price: {
     type: Number,
     required: true
-  }
+  },
+   image: {
+    type: String
+   }
 });
 
 const orderSchema = new mongoose.Schema(
@@ -53,10 +56,19 @@ const orderSchema = new mongoose.Schema(
       enum: ['Pending', 'Paid', 'Failed'],
       default: 'Pending'
     }
+
   },
   {
     timestamps: true 
   }
 );
+
+orderSchema.set("toJSON", {
+  transform: function (doc, ret) {
+    ret.orderId = ret._id;
+    delete ret._id;
+    delete ret.__v;
+  }
+});
 
 module.exports = mongoose.model('Order', orderSchema);
