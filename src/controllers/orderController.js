@@ -123,17 +123,15 @@ exports.getSingleOrder = async (req, res) => {
 //update order status
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { orderId } = req.query; 
-    const { status } = req.body;
+    const { orderId } = req.query;
+    const { status, deliveryAddress } = req.body;
 
-    //Validate query
     if (!orderId) {
       return res.status(400).json({
         message: 'orderId is required'
       });
     }
 
-    //Validate body
     if (!status) {
       return res.status(400).json({
         message: 'status is required'
@@ -154,7 +152,6 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    //Find order
     const order = await Order.findById(orderId);
 
     if (!order) {
@@ -163,7 +160,6 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    //Validate transition
     const allowedTransitions = {
       Pending: ['Confirmed', 'Cancelled'],
       Confirmed: ['Preparing'],
@@ -172,14 +168,24 @@ exports.updateOrderStatus = async (req, res) => {
       Cancelled: []
     };
 
-    //Update
+    if (!allowedTransitions[order.orderStatus].includes(status)) {
+      return res.status(400).json({
+        message: 'Invalid status transition'
+      });
+    }
+
+    
     order.orderStatus = status;
+
+    if (deliveryAddress) {
+      order.deliveryAddress = deliveryAddress;
+    }
+
     await order.save();
 
-    //Response
     res.status(200).json({
       success: true,
-      message: 'Order status updated',
+      message: 'Order updated successfully',
       order
     });
 
@@ -187,6 +193,7 @@ exports.updateOrderStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 
