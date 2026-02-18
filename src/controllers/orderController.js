@@ -63,13 +63,19 @@ exports.placeOrder = async (req, res) => {
 };
 
 //getUser
-exports.getUserOrders = async (req, res) => {
+exports.getMyOrders = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = req.query;
 
-    const orders = await Order.find({ userId })
-      .sort({ createdAt: -1 });
-      
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required"
+      });
+    }
+
+    const orders = await Order.find({ userId });
+
     res.status(200).json({
       success: true,
       count: orders.length,
@@ -77,9 +83,13 @@ exports.getUserOrders = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
+
 
 //get single order
 exports.getSingleOrder = async (req, res) => {
