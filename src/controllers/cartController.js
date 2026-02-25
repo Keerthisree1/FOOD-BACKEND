@@ -253,49 +253,51 @@ exports.clearCart = async (req, res) => {
 //updateCartQuantity
 exports.updateCartQuantity = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { foodId, type } = req.body;
+    const { foodId, quantity } = req.body;
 
-    const cart = await Cart.findOne({ userId });
+    if (!foodId || quantity === undefined) {
+      return res.status(400).json({
+        message: "foodId and quantity are required"
+      });
+    }
+
+    let cart = await Cart.findOne({ userId: req.user.id });
+
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
+      cart = await Cart.create({
+        userId: req.user.id,
+        items: []
+      });
     }
 
     const item = cart.items.find(
-      i => i.foodId.toString() === foodId
+      (item) => item.foodId.toString() === foodId
     );
 
     if (!item) {
-      return res.status(404).json({ message: "Item not found" });
+      return res.status(404).json({
+        message: "Item not found in cart"
+      });
     }
 
-    if (type === "increase") {
-      item.quantity += 1;
+    if (quantity === 0) {
+      cart.items = cart.items.filter(
+        (item) => item.foodId.toString() !== foodId
+      );
+    } else {
+      item.quantity = quantity;
     }
-
-    if (type === "decrease") {
-      item.quantity -= 1;
-
-      //
-      if (item.quantity <= 0) {
-        cart.items = cart.items.filter(
-          i => i.foodId.toString() !== foodId
-        );
-      }
-    }
-
-    cart.totalAmount = cart.items.reduce(
-      (sum, i) => sum + i.price * i.quantity,
-      0
-    );
 
     await cart.save();
 
     res.status(200).json({
-      success: true,
+      message: "Cart updated successfully",
       cart
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
   }
 };
