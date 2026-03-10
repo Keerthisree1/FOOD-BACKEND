@@ -3,10 +3,10 @@ const DeliveryAddress = require("../models/deliveryAddressModel");
 exports.addAddress = async (req, res) => {
   try {
 
-    const { deliveryAddress } = req.body;
+    const {userId, deliveryAddress } = req.body;
 
     const address = await DeliveryAddress.create({
-      userId: req.user._id,
+      userId,
       deliveryAddress
     });
 
@@ -43,11 +43,11 @@ exports.getAddress = async (req, res) => {
 exports.updateAddress = async (req, res) => {
   try {
 
-    const addressId = req.params.id;
+    const { deliveryAddress } = req.body;
 
-    const updatedAddress = await DeliveryAddress.findByIdAndUpdate(
-      addressId,
-      { deliveryAddress: req.body.deliveryAddress },
+    const updatedAddress = await DeliveryAddress.findOneAndUpdate(
+      { userId: req.user._id },
+      { deliveryAddress },
       { new: true }
     );
 
@@ -58,6 +58,29 @@ exports.updateAddress = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
+//delete
+exports.deleteAddress = async (req, res) => {
+  try {
+
+    const deletedAddress = await DeliveryAddress.findOneAndDelete({
+      userId: req.user._id
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Address deleted successfully",
+      data: deletedAddress
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
   }
 };
