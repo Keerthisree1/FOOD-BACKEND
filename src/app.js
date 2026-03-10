@@ -30,6 +30,7 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/foods', require('./routes/foodRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
+app.use('/api/address', require('./routes/deliveryAddressRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 
