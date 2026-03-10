@@ -90,6 +90,37 @@ exports.getMyOrders = async (req, res) => {
   }
 };
 
+//new get order again 
+exports.orderAgain = async (req, res) => {
+  try {
+
+    const orderId = req.query.orderId;
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Order items fetched successfully",
+      items: order.items
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
+  }
+};
+
 
 //get single order
 exports.getSingleOrder = async (req, res) => {
