@@ -1,21 +1,17 @@
 const Order = require('../models/orderModel');
 const Cart = require('../models/cartModel');
 //placeOrder
+const mongoose = require("mongoose");
+
 exports.placeOrder = async (req, res) => {
   try {
 
     const tokenUserId = req.user._id.toString();
     const { userId, deliveryAddress } = req.body;
 
-    if (!userId || !deliveryAddress) {
-      return res.status(400).json({
-        message: "userId and deliveryAddress are required"
-      });
-    }
-
     if (userId !== tokenUserId) {
       return res.status(403).json({
-        message: "You are not allowed to place order for another user"
+        message: "You cannot place order for another user"
       });
     }
 
@@ -23,21 +19,25 @@ exports.placeOrder = async (req, res) => {
 
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
-        message: "Cart empty"
+        message: "Cart is empty"
       });
     }
 
-    const paymentData = {
+    // CREATE ORDER HERE
+    const order = await Order.create({
       userId,
       items: cart.items,
       totalAmount: cart.totalAmount,
-      deliveryAddress
-    };
+      deliveryAddress,
+      orderStatus: "Pending",
+      paymentStatus: "Pending"
+    });
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
-      message: "Proceed to payment",
-      paymentData
+      message: "Order created",
+      orderId: order._id,
+      order
     });
 
   } catch (error) {
@@ -73,7 +73,68 @@ exports.getMyOrders = async (req, res) => {
     });
   }
 };
+//order again post
+exports.orderAgainPost = async (req, res) => {
+  try {
 
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "orderId is required"
+      });
+    }
+
+    //Find old order
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    //Find user's cart
+    let cart = await Cart.findOne({ userId: order.userId });
+
+    if (!cart) {
+      cart = new Cart({
+        userId: order.userId,
+        items: [],
+        totalAmount: 0
+      });
+    }
+
+    //Add order items to cart
+    order.items.forEach(item => {
+      cart.items.push({
+        foodId: item.foodId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        image: item.image
+      });
+
+      cart.totalAmount += item.price * item.quantity;
+    });
+
+    await cart.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Items added to cart successfully",
+      cart
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 //new get order again 
 exports.orderAgain = async (req, res) => {
   try {

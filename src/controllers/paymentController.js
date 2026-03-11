@@ -61,6 +61,7 @@ exports.cashfreeWebhook = async (req, res) => {
   try {
     console.log("Cashfree Webhook Received");
 
+    // Parse payload
     const payload =
       req.body instanceof Buffer
         ? JSON.parse(req.body.toString())
@@ -73,7 +74,7 @@ exports.cashfreeWebhook = async (req, res) => {
 
       const orderId = data.order.order_id;
 
-      //Update payment
+      //Update Payment collection
       const payment = await Payment.findOneAndUpdate(
         { orderId },
         {
@@ -89,30 +90,38 @@ exports.cashfreeWebhook = async (req, res) => {
 
       console.log("Payment confirmed for order:", orderId);
 
-      //Create order in Orders collection
-      const order = await Order.create({
-        userId: payment.userId,
-        items: payment.items,
-        totalAmount: payment.totalAmount,
-        deliveryAddress: payment.deliveryAddress,
-        orderStatus: "CONFIRMED",
-        paymentStatus: "PAID"
-      });
-
-      //Clear cart
-      await Cart.findOneAndUpdate(
-        { userId: payment.userId },
-        { items: [], totalAmount: 0 }
+      //Update Order status
+      await Order.findByIdAndUpdate(
+        orderId,
+        {
+          paymentStatus: "PAID",
+          orderStatus: "CONFIRMED"
+        },
+        { new: true }
       );
 
-      console.log("Order created after payment:", order._id);
+      console.log("Order updated after payment:", orderId);
+
+      //Clear user's cart
+      if (payment && payment.userId) {
+        await Cart.findOneAndUpdate(
+          { userId: payment.userId },
+          { items: [], totalAmount: 0 }
+        );
+      }
+
+      console.log("Cart cleared for user:", payment?.userId);
     }
 
     res.status(200).json({ received: true });
 
   } catch (error) {
     console.error("Webhook error:", error);
-    res.status(500).json({ received: false });
+
+    res.status(500).json({
+      received: false,
+      message: error.message
+    });
   }
 };
 //verify payment
