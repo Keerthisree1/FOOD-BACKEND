@@ -61,7 +61,6 @@ exports.cashfreeWebhook = async (req, res) => {
   try {
     console.log("Cashfree Webhook Received");
 
-    // Parse raw body
     const payload =
       req.body instanceof Buffer
         ? JSON.parse(req.body.toString())
@@ -71,9 +70,11 @@ exports.cashfreeWebhook = async (req, res) => {
     const data = payload.data;
 
     if (eventType === "PAYMENT_SUCCESS") {
+
       const orderId = data.order.order_id;
 
-      await Payment.findOneAndUpdate(
+      //Update payment
+      const payment = await Payment.findOneAndUpdate(
         { orderId },
         {
           paymentStatus: "PAID",
@@ -82,19 +83,38 @@ exports.cashfreeWebhook = async (req, res) => {
           customerId: data.customer_details.customer_id,
           customerEmail: data.customer_details.customer_email,
           customerPhone: data.customer_details.customer_phone
-        }
+        },
+        { new: true }
       );
 
       console.log("Payment confirmed for order:", orderId);
+
+      //Create order in Orders collection
+      const order = await Order.create({
+        userId: payment.userId,
+        items: payment.items,
+        totalAmount: payment.totalAmount,
+        deliveryAddress: payment.deliveryAddress,
+        orderStatus: "CONFIRMED",
+        paymentStatus: "PAID"
+      });
+
+      //Clear cart
+      await Cart.findOneAndUpdate(
+        { userId: payment.userId },
+        { items: [], totalAmount: 0 }
+      );
+
+      console.log("Order created after payment:", order._id);
     }
 
     res.status(200).json({ received: true });
+
   } catch (error) {
     console.error("Webhook error:", error);
     res.status(500).json({ received: false });
   }
 };
-
 //verify payment
 
 exports.verifyPayment = async (req, res) => {

@@ -3,65 +3,49 @@ const Cart = require('../models/cartModel');
 //placeOrder
 exports.placeOrder = async (req, res) => {
   try {
-    const tokenUserId = req.user._id.toString(); 
+
+    const tokenUserId = req.user._id.toString();
     const { userId, deliveryAddress } = req.body;
 
-    // 1. Validate inputs
     if (!userId || !deliveryAddress) {
       return res.status(400).json({
-        message: 'userId and deliveryAddress are required'
+        message: "userId and deliveryAddress are required"
       });
     }
 
-    // 2. Security check 
     if (userId !== tokenUserId) {
       return res.status(403).json({
-        message: 'You are not allowed to place order for another user'
+        message: "You are not allowed to place order for another user"
       });
     }
-     // 3. Get cart
+
     const cart = await Cart.findOne({ userId });
 
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
-      success: true,
-      message: "Order already placed or cart empty"
+        message: "Cart empty"
       });
     }
 
-    // 4. Create order
-    const order = await Order.create({
-    userId,
-    items: cart.items.map(item => ({
-    foodId: item.foodId,
-    name: item.name,
-    quantity: item.quantity,
-    price: item.price,
-    image: item.image  
-  })),
-    totalAmount: cart.totalAmount,
-    deliveryAddress,
-    orderStatus: 'Pending',
-    paymentStatus: 'Pending'
-  });
+    const paymentData = {
+      userId,
+      items: cart.items,
+      totalAmount: cart.totalAmount,
+      deliveryAddress
+    };
 
-
-    // 5. Clear cart
-    cart.items = [];
-    cart.totalAmount = 0;
-    await cart.save();
-
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: 'Order placed successfully',
-      order
+      message: "Proceed to payment",
+      paymentData
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message
+    });
   }
 };
-
 //getUser
 exports.getMyOrders = async (req, res) => {
   try {
